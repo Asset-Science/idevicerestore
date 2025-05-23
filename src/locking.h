@@ -21,14 +21,14 @@
 #ifndef LOCKING_H
 #define LOCKING_H
 #include <stdio.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <fcntl.h>
 #endif
 
 typedef struct {
-#ifdef WIN32
+#ifdef _WIN32
 	HANDLE fp;
 	OVERLAPPED ldata;
 #else

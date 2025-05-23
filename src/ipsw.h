@@ -38,7 +38,7 @@ struct ipsw_archive {
 };
 typedef struct ipsw_archive* ipsw_archive_t;
 
-ipsw_archive_t ipsw_open(const char* ipsw);
+__declspec(dllexport) ipsw_archive_t ipsw_open(const char* ipsw);
 void ipsw_close(ipsw_archive_t ipsw);
 
 int ipsw_print_info(const char* ipsw);

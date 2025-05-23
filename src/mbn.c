@@ -84,7 +84,7 @@ int mbn_update_sig_blob(mbn_file* mbn, const unsigned char* sigdata, unsigned in
 		return -1;
 	}
 
-	memcpy(mbn->data + mbn->parsed_sig_offset, sigdata, siglen);
+	memcpy((unsigned char*)mbn->data + mbn->parsed_sig_offset, sigdata, siglen);
 
 	return 0;
 }
