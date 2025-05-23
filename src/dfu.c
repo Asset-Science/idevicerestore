@@ -24,7 +24,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <libirecovery.h>
 
 #include <libtatsu/tss.h>
@@ -243,6 +245,23 @@ int dfu_get_cpid(struct idevicerestore_client_t* client, unsigned int* cpid)
 	*cpid = device_info->cpid;
 
 	return 0;
+}
+
+__declspec(dllexport) int dfu_check_mode(struct idevicerestore_client_t* client) {
+	int mode = 0;
+
+	if (dfu_client_new(client) < 0) {
+		error("ERROR: Unable to connect to DFU device\n");
+		return -1;
+	}
+
+	irecv_get_mode(client->dfu->client, &mode);
+
+	if (mode == IRECV_K_DFU_MODE) {
+		return 0;
+	}
+
+	return 1;
 }
 
 int dfu_get_prev(struct idevicerestore_client_t* client, unsigned int* prev)

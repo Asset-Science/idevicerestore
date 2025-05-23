@@ -32,17 +32,23 @@ extern "C" {
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/libimobiledevice.h>
 
-int normal_check_mode(struct idevicerestore_client_t* client);
-irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client);
-int normal_enter_recovery(struct idevicerestore_client_t* client);
-int normal_is_image4_supported(struct idevicerestore_client_t* client);
-int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size);
-int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size);
-int normal_get_firmware_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info);
-int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info);
-plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const char* domain, const char* key);
-int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_t manifest);
-int normal_handle_commit_stashbag(struct idevicerestore_client_t* client, plist_t manifest);
+
+#ifdef _MSC_VER
+__declspec(dllexport) int normal_check_mode(struct idevicerestore_client_t* client, bool *stop);
+__declspec(dllexport) irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, bool *stop);
+#else
+int normal_check_mode(struct idevicerestore_client_t* client, bool *stop);
+irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, bool *stop);
+#endif
+int normal_enter_recovery(struct idevicerestore_client_t* client, bool *stop);
+int normal_get_ecid(struct idevicerestore_client_t* client, uint64_t* ecid, bool* stop);
+int normal_is_image4_supported(struct idevicerestore_client_t* client, bool* stop);
+int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, int* nonce_size, bool* stop);
+int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, int* nonce_size, bool* stop);
+int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info, bool* stop);
+plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const char* domain, const char* key, bool *stop);
+int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_t manifest, bool* stop);
+int normal_handle_commit_stashbag(struct idevicerestore_client_t* client, plist_t manifest, bool* stop);
 
 #ifdef __cplusplus
 }

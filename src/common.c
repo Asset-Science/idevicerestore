@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 #include <errno.h>
 #include <libgen.h>
 #include <time.h>
@@ -37,7 +41,7 @@
 #include <ctype.h>
 #include <libimobiledevice-glue/thread.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
 #ifndef _O_EXCL
@@ -255,7 +259,7 @@ void debug_plist(plist_t plist) {
 }
 
 void print_progress_bar(double progress) {
-#ifndef WIN32
+#ifndef _WIN32
 	if (info_disabled) return;
 	int i = 0;
 	if(progress < 0) return;
@@ -364,7 +368,7 @@ int mkstemp(char *tmpl)
 	XXXXXX = &tmpl[len - 6];
 
 	/* Get some more or less random data.  */
-#ifdef WIN32
+#ifdef _WIN32
 	{
 		SYSTEMTIME stNow;
 		FILETIME ftNow;
@@ -408,7 +412,7 @@ int mkstemp(char *tmpl)
 		v /= 62;
 		XXXXXX[5] = letters[v % 62];
 
-#ifdef WIN32
+#ifdef _WIN32
 		fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
 #else
 		fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
@@ -431,7 +435,7 @@ int mkstemp(char *tmpl)
 char *get_temp_filename(const char *prefix)
 {
 	char *result = NULL;
-	char *tmpdir;
+	char *tmpdir = NULL;
 	size_t lt;
 	size_t lp;
 	const char *TMPVARS[] = { "TMPDIR", "TMP", "TEMP", "TEMPDIR", NULL };
@@ -442,7 +446,7 @@ char *get_temp_filename(const char *prefix)
 	if (!prefix) {
 		prefix = "tmp_";
 	}
-#ifdef WIN32
+#ifdef _WIN32
 	if (strchr(prefix, '/') || strchr(prefix, '\\')) return NULL;
 #else
 	if (strchr(prefix, '/')) return NULL;
@@ -450,7 +454,7 @@ char *get_temp_filename(const char *prefix)
 
 	while (TMPVARS[i] && ((tmpdir = getenv(TMPVARS[i])) == NULL)) i++;
 	if (!tmpdir || access(tmpdir, W_OK|X_OK) != 0) {
-#ifdef WIN32
+#ifdef _WIN32
 		tmpdir = "C:\\WINDOWS\\TEMP";
 #else
 		tmpdir = P_tmpdir;
@@ -467,7 +471,7 @@ char *get_temp_filename(const char *prefix)
 	lp = strlen(prefix);
 	result = malloc(lt + lp + 8);
 	memcpy(result, tmpdir, lt);
-#ifdef WIN32
+#ifdef _WIN32
 	if (tmpdir[lt-1] != '/' && tmpdir[lt-1] != '\\') result[lt++] = '\\';
 #else
 	if (tmpdir[lt-1] != '/') result[lt++] = '/';
@@ -514,7 +518,7 @@ char* strsep(char** strp, const char* delim)
 #ifndef HAVE_REALPATH
 char* realpath(const char *filename, char *resolved_name)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	if (access(filename, F_OK) != 0) {
 		return NULL;
 	}
@@ -529,7 +533,7 @@ char* realpath(const char *filename, char *resolved_name)
 }
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define BS_CC '\b'
 #define CTRL_C_CC 0x03
 #define ESC_CC 0x1B
@@ -568,7 +572,7 @@ void get_user_input(char *buf, int maxlen, int secure)
 				len--;
 			}
 		}
-#ifdef WIN32
+#ifdef _WIN32
 		else if (c == CTRL_C_CC || c == ESC_CC) {
 			c = -1;
 			break;
@@ -584,7 +588,7 @@ void get_user_input(char *buf, int maxlen, int secure)
 
 const char* path_get_basename(const char* path)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	const char *p = path + strlen(path);
 	while (p > path) {
 		if ((*p == '/') || (*p == '\\')) {

@@ -28,7 +28,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <libgen.h>
 #include <math.h>
 #include <libimobiledevice/restore.h>
@@ -123,7 +125,7 @@ static int restore_finished = 0;
 
 static int restore_device_connected = 0;
 
-int restore_client_new(struct idevicerestore_client_t* client)
+int restore_client_new(struct idevicerestore_client_t* client, bool* stop)
 {
 	struct restore_client_t* restore = (struct restore_client_t*) malloc(sizeof(struct restore_client_t));
 	if (restore == NULL) {
@@ -131,7 +133,7 @@ int restore_client_new(struct idevicerestore_client_t* client)
 		return -1;
 	}
 
-	if (restore_open_with_timeout(client) < 0) {
+	if (restore_open_with_timeout(client, stop) < 0) {
 		restore_client_free(client);
 		return -1;
 	}
@@ -160,11 +162,11 @@ void restore_client_free(struct idevicerestore_client_t* client)
 	}
 }
 
-static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t* device)
+static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t* device, bool* stop)
 {
 	int num_devices = 0;
 	char **devices = NULL;
-	idevice_get_device_list(&devices, &num_devices);
+	idevice_get_device_list(&devices, &num_devices, stop);
 	if (num_devices == 0) {
 		return -1;
 	}
@@ -182,7 +184,7 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 			idevice_free(dev);
 			dev = NULL;
 		}
-		device_error = idevice_new(&dev, devices[j]);
+		device_error = idevice_new(&dev, devices[j], stop);
 		if (device_error != IDEVICE_E_SUCCESS) {
 			debug("%s: can't open device with UDID %s\n", __func__, devices[j]);
 			continue;
@@ -190,16 +192,32 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 
 		if (restored_client_new(dev, &restore, "idevicerestore") != RESTORE_E_SUCCESS) {
 			debug("%s: can't connect to restored on device with UDID %s\n", __func__, devices[j]);
+			if (dev != NULL) {  // Memory Leak Fix
+				idevice_free(dev);
+				dev = NULL;
+			}
 			continue;
-
 		}
 		char* type = NULL;
 		uint64_t version = 0;
 		if (restored_query_type(restore, &type, &version) != RESTORE_E_SUCCESS) {
+			restored_client_free(restore); // Memory Leak Fix
+			restore = NULL;
+			if (type) {
+				free(type);
+			}
+			if (dev != NULL) {
+				idevice_free(dev);
+				dev = NULL;
+			}
 			continue;
 		}
 		if (strcmp(type, "com.apple.mobile.restored") != 0) {
 			free(type);
+			if (dev != NULL) { // Memory Leak Fix
+				idevice_free(dev);
+				dev = NULL;
+			}
 			continue;
 		}
 		free(type);
@@ -209,6 +227,10 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 			plist_t hwinfo = NULL;
 
 			if (restored_query_value(restore, "HardwareInfo", &hwinfo) != RESTORE_E_SUCCESS) {
+				if (dev != NULL) { // Memory Leak Fix
+					idevice_free(dev);
+					dev = NULL;
+				}
 				continue;
 			}
 
@@ -217,16 +239,26 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 				if (hwinfo) {
 					plist_free(hwinfo);
 				}
+				if (dev != NULL) { // Memory Leak Fix
+					idevice_free(dev);
+					dev = NULL;
+				}
 				continue;
 			}
-			restored_client_free(restore);
-			restore = NULL;
+			if (restore) {
+				restored_client_free(restore);
+				restore = NULL;
+			}
 
 			uint64_t this_ecid = 0;
 			plist_get_uint_val(node, &this_ecid);
 			plist_free(hwinfo);
 
 			if (this_ecid != client->ecid) {
+				if (dev != NULL) { // Memory Leak Fix
+					idevice_free(dev);
+					dev = NULL;
+				}
 				continue;
 			}
 		}
@@ -243,11 +275,11 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 	return 0;
 }
 
-int restore_check_mode(struct idevicerestore_client_t* client)
+__declspec(dllexport) int restore_check_mode(struct idevicerestore_client_t* client, bool *stop)
 {
 	idevice_t device = NULL;
 
-	restore_idevice_new(client, &device);
+	restore_idevice_new(client, &device, stop);
 	if (!device) {
 		return -1;
 	}
@@ -256,7 +288,7 @@ int restore_check_mode(struct idevicerestore_client_t* client)
 	return 0;
 }
 
-irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client)
+__declspec(dllexport) irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client, bool* stop)
 {
 	char* model = NULL;
 	plist_t node = NULL;
@@ -265,7 +297,7 @@ irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client)
 	restored_error_t restore_error = RESTORE_E_SUCCESS;
 	irecv_device_t irecv_device = NULL;
 
-	restore_idevice_new(client, &device);
+	restore_idevice_new(client, &device, stop);
 	if (!device) {
 		return NULL;
 	}
@@ -307,7 +339,7 @@ irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client)
 	return irecv_device;
 }
 
-int restore_is_image4_supported(struct idevicerestore_client_t* client)
+int restore_is_image4_supported(struct idevicerestore_client_t* client, bool *stop)
 {
 	int result = 0;
 	plist_t hwinfo = NULL;
@@ -315,7 +347,7 @@ int restore_is_image4_supported(struct idevicerestore_client_t* client)
 	restored_client_t restore = NULL;
 	restored_error_t restore_error = RESTORE_E_SUCCESS;
 
-	if (idevice_new(&device, client->udid) != IDEVICE_E_SUCCESS) {
+	if (idevice_new(&device, client->udid, stop) != IDEVICE_E_SUCCESS) {
 		error("ERROR: Could not connect to device %s\n", client->udid);
 		return -1;
 	}
@@ -347,10 +379,10 @@ int restore_is_image4_supported(struct idevicerestore_client_t* client)
 	return result;
 }
 
-int restore_reboot(struct idevicerestore_client_t* client)
+int restore_reboot(struct idevicerestore_client_t* client, bool* stop)
 {
 	if(client->restore == NULL) {
-		if (restore_open_with_timeout(client) < 0) {
+		if (restore_open_with_timeout(client, stop) < 0) {
 			error("ERROR: Unable to open device in restore mode\n");
 			return -1;
 		}
@@ -373,7 +405,7 @@ int restore_reboot(struct idevicerestore_client_t* client)
 	return 0;
 }
 
-static int restore_is_current_device(struct idevicerestore_client_t* client, const char* udid)
+static int restore_is_current_device(struct idevicerestore_client_t* client, const char* udid, bool* stop)
 {
 	if (!client) {
 		return 0;
@@ -390,7 +422,7 @@ static int restore_is_current_device(struct idevicerestore_client_t* client, con
 	char *type = NULL;
 	uint64_t version = 0;
 
-	device_error = idevice_new(&device, udid);
+	device_error = idevice_new(&device, udid, stop);
 	if (device_error != IDEVICE_E_SUCCESS) {
 		debug("%s: can't open device with UDID %s\n", __func__, udid);
 		return 0;
@@ -439,7 +471,7 @@ static int restore_is_current_device(struct idevicerestore_client_t* client, con
 	return (this_ecid == client->ecid);
 }
 
-int restore_open_with_timeout(struct idevicerestore_client_t* client)
+int restore_open_with_timeout(struct idevicerestore_client_t* client, bool* stop)
 {
 	char *type = NULL;
 	uint64_t version = 0;
@@ -470,13 +502,13 @@ int restore_open_with_timeout(struct idevicerestore_client_t* client)
 
 	restore_device_connected = 0;
 
-	if (!restore_is_current_device(client, client->udid)) {
+	if (!restore_is_current_device(client, client->udid, stop)) {
 		error("ERROR: Unable to connect to device in restore mode\n");
 		return -1;
 	}
 
 	info("Connecting now...\n");
-	device_error = idevice_new(&device, client->udid);
+	device_error = idevice_new(&device, client->udid, stop);
 	if (device_error != IDEVICE_E_SUCCESS) {
 		return -1;
 	}
@@ -637,9 +669,9 @@ const char* restore_progress_string(unsigned int operation)
 	}
 }
 
-struct restored_service_client {
-
-};
+//struct restored_service_client {
+//
+//};
 
 #define SERVICE_TYPE_RESTORED 1
 #define SERVICE_TYPE_PLIST 2
@@ -871,7 +903,7 @@ int restore_handle_status_msg(struct idevicerestore_client_t* client, plist_t ms
 	node = plist_dict_get_item(msg, "AMRError");
 	if (node && plist_get_node_type(node) == PLIST_UINT) {
 		plist_get_uint_val(node, &value);
-		result = -value;
+		result = -((int)value);
 		if (result > 0) {
 			result = -result;
 		}
@@ -5199,7 +5231,7 @@ static void rp_status_cb(reverse_proxy_client_t client, reverse_proxy_status_t s
 }
 #endif
 
-int restore_device(struct idevicerestore_client_t* client, plist_t build_identity)
+int restore_device(struct idevicerestore_client_t* client, plist_t build_identity, bool* stop)
 {
 	int err = 0;
 	char* type = NULL;
@@ -5216,7 +5248,7 @@ int restore_device(struct idevicerestore_client_t* client, plist_t build_identit
 	restore_finished = 0;
 
 	// open our connection to the device and verify we're in restore mode
-	err = restore_open_with_timeout(client);
+	err = restore_open_with_timeout(client, stop);
 	if (err < 0) {
 		error("ERROR: Unable to open device in restore mode\n");
 		return (err == -2) ? -1: -2;

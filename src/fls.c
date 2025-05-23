@@ -40,7 +40,7 @@ static void fls_parse_elements(fls_file* fls)
 
 	fls_element* cur = NULL;
 	do {
-		void* p = fls->data + offset;
+		char* p = fls->data + offset;
 		uint32_t hdrsize = 0;
 		cur = (fls_element*)p;
 		if ((offset + cur->size) > fls->size) {
@@ -175,28 +175,28 @@ int fls_update_sig_blob(fls_file* fls, const unsigned char* sigdata, unsigned in
 			((fls_0c_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy first part of data
 			firstpartlen = fls->elements[i]->size - hdrsize - oldsiglen;
-			memcpy(newdata+offset+hdrsize, ((fls_0c_element*)fls->elements[i])->data, firstpartlen);
+			memcpy((unsigned char*)newdata+offset+hdrsize, ((fls_0c_element*)fls->elements[i])->data, firstpartlen);
 			// copy new signature data
-			memcpy(newdata+offset+hdrsize+firstpartlen, sigdata, siglen);
-			((fls_0c_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+			memcpy((unsigned char*)newdata+offset+hdrsize+firstpartlen, sigdata, siglen);
+			((fls_0c_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			fls->elements[i]->size -= oldsiglen;
 			fls->elements[i]->size += siglen;
 			((fls_0c_element*)fls->elements[i])->data_size -= oldsiglen;
 			((fls_0c_element*)fls->elements[i])->data_size += siglen;
-			memcpy(newdata+offset+hdrsize+0x10, &(((fls_0c_element*)fls->elements[i])->data_size), 4);
+			memcpy((unsigned char*)newdata+offset+hdrsize+0x10, &(((fls_0c_element*)fls->elements[i])->data_size), 4);
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			break;
 		case 0x10:
 			hdrsize = offsetof(fls_10_element, data);
 			// update offset
 			((fls_10_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, ((fls_10_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
-				((fls_10_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, ((fls_10_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
+				((fls_10_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				((fls_10_element*)fls->elements[i])->data = NULL;
 			}
@@ -206,11 +206,11 @@ int fls_update_sig_blob(fls_file* fls, const unsigned char* sigdata, unsigned in
 			// update offset
 			((fls_14_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, ((fls_14_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
-				((fls_14_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, ((fls_14_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
+				((fls_14_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				((fls_14_element*)fls->elements[i])->data = NULL;
 			}
@@ -218,11 +218,11 @@ int fls_update_sig_blob(fls_file* fls, const unsigned char* sigdata, unsigned in
 		default:
 			hdrsize = offsetof(fls_element, data);
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, fls->elements[i]->data, fls->elements[i]->size - hdrsize);
-				fls->elements[i]->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, fls->elements[i]->data, fls->elements[i]->size - hdrsize);
+				fls->elements[i]->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				fls->elements[i]->data = NULL;
 			}
@@ -271,29 +271,29 @@ int fls_insert_ticket(fls_file* fls, const unsigned char* data, unsigned int siz
 			// update offset
 			((fls_0c_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy ticket data
-			memcpy(newdata+offset+hdrsize, data, size);
+			memcpy((unsigned char*)newdata+offset+hdrsize, data, size);
 			if (padding > 0) {
 				// padding
-				memset(newdata+offset+hdrsize+size, '\xFF', padding);
+				memset((unsigned char*)newdata+offset+hdrsize+size, '\xFF', padding);
 			}
 			// copy remaining data
-			memcpy(newdata+offset+hdrsize+size+padding, ((fls_0c_element*)fls->elements[i])->data, fls->elements[i]->size);
-			((fls_0c_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+			memcpy((unsigned char*)newdata+offset+hdrsize+size+padding, ((fls_0c_element*)fls->elements[i])->data, fls->elements[i]->size);
+			((fls_0c_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			fls->elements[i]->size += (size + padding);
 			((fls_0c_element*)fls->elements[i])->data_size += (size + padding);
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			break;
 		case 0x10:
 			hdrsize = offsetof(fls_10_element, data);
 			// update offset
 			((fls_10_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, ((fls_10_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
-				((fls_10_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, ((fls_10_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
+				((fls_10_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				((fls_10_element*)fls->elements[i])->data = NULL;
 			}
@@ -303,11 +303,11 @@ int fls_insert_ticket(fls_file* fls, const unsigned char* data, unsigned int siz
 			// update offset
 			((fls_14_element*)fls->elements[i])->offset = offset+hdrsize;
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, ((fls_14_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
-				((fls_14_element*)fls->elements[i])->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, ((fls_14_element*)fls->elements[i])->data, fls->elements[i]->size - hdrsize);
+				((fls_14_element*)fls->elements[i])->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				((fls_14_element*)fls->elements[i])->data = NULL;
 			}
@@ -315,11 +315,11 @@ int fls_insert_ticket(fls_file* fls, const unsigned char* data, unsigned int siz
 		default:
 			hdrsize = offsetof(fls_element, data);
 			// copy header
-			memcpy(newdata+offset, fls->elements[i], hdrsize);
+			memcpy((unsigned char*)newdata+offset, fls->elements[i], hdrsize);
 			// copy data
 			if (fls->elements[i]->size > hdrsize) {
-				memcpy(newdata+offset+hdrsize, fls->elements[i]->data, fls->elements[i]->size - hdrsize);
-				fls->elements[i]->data = newdata+offset+hdrsize;
+				memcpy((unsigned char*)newdata+offset+hdrsize, fls->elements[i]->data, fls->elements[i]->size - hdrsize);
+				fls->elements[i]->data = (unsigned char*)newdata+offset+hdrsize;
 			} else {
 				fls->elements[i]->data = NULL;
 			}
