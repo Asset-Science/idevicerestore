@@ -18,7 +18,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifdef _WIN32
+#ifdef WIN32
 #include <windows.h>
 #else
 #include <errno.h>
@@ -32,7 +32,7 @@ int lock_file(const char* filename, lock_info_t* lockinfo)
 	if (!lockinfo) {
 		return -1;
 	}
-#ifdef _WIN32
+#ifdef WIN32
 	lockinfo->fp = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (lockinfo->fp == INVALID_HANDLE_VALUE) {
 		debug("ERROR: could not open or create lockfile '%s'\n", filename);
@@ -76,7 +76,7 @@ int unlock_file(lock_info_t* lockinfo)
 	if (!lockinfo) {
 		return -1;
 	}
-#ifdef _WIN32
+#ifdef WIN32
 	if (lockinfo->fp == INVALID_HANDLE_VALUE) {
 		return -1;
 	}

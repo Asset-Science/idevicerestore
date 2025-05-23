@@ -26,9 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice-glue/socket.h>
 
@@ -243,9 +241,7 @@ static int fdr_send_plist(fdr_client_t fdr, plist_t data)
 	if (!buf)
 		return -1;
 
-#ifdef VERBOSE_LOGGING
 	debug("FDR sending %d bytes:\n", len);
-#endif
 	if (idevicerestore_debug)
 		debug_plist(data);
 	device_error = idevice_connection_send(fdr->connection, (char *)&len, sizeof(len), &bytes);
@@ -579,10 +575,8 @@ static int fdr_handle_proxy_cmd(fdr_client_t fdr)
 			break;
 		}
 		if (bytes) {
-#ifdef VERBOSE_LOGGING
-			debug("FDR %p got payload of %u bytes, now try to proxy it\n", fdr, bytes);
+			debug("FDR %p got payload of %u bytes, now trying to proxy it\n", fdr, bytes);
 			debug("Sending %u bytes of data\n", bytes);
-#endif
 			sent = 0;
 			while (sent < bytes) {
 				int s = socket_send(sockfd, buf + sent, bytes - sent);

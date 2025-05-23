@@ -30,7 +30,6 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <plist/plist.h>
 #include <libirecovery.h>
 
@@ -75,13 +74,8 @@ extern const uint32_t lpol_file_length;
 
 typedef void (*idevicerestore_progress_cb_t)(int step, double step_progress, void* userdata);
 
-#ifdef OSX
 struct idevicerestore_client_t* idevicerestore_client_new(void);
 void idevicerestore_client_free(struct idevicerestore_client_t* client);
-#else
-__declspec(dllexport) struct idevicerestore_client_t* idevicerestore_client_new(void);
-__declspec(dllexport) void idevicerestore_client_free(struct idevicerestore_client_t* client);
-#endif
 
 void idevicerestore_set_ecid(struct idevicerestore_client_t* client, uint64_t ecid);
 void idevicerestore_set_udid(struct idevicerestore_client_t* client, const char* udid);
@@ -96,11 +90,7 @@ void idevicerestore_set_debug_stream(FILE* strm);
 int idevicerestore_start(struct idevicerestore_client_t* client);
 const char* idevicerestore_get_error(void);
 
-#ifdef OSX
-irecv_device_t get_irecv_device(struct idevicerestore_client_t* client, bool *stop);
-#else
-__declspec(dllexport) irecv_device_t get_irecv_device(struct idevicerestore_client_t* client, bool *stop);
-#endif
+irecv_device_t get_irecv_device(struct idevicerestore_client_t* client);
 int get_ecid(struct idevicerestore_client_t* client, uint64_t* ecid);
 int is_image4_supported(struct idevicerestore_client_t* client);
 int get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size);

@@ -33,9 +33,7 @@ extern "C" {
 #endif
 
 #include <inttypes.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 
 #include <plist/plist.h>
 #include <libirecovery.h>
@@ -69,12 +67,6 @@ extern "C" {
 #define IBOOT_FLAG_EFFECTIVE_PRODUCTION_MODE 1 << 4
 
 #define USER_AGENT_STRING "InetURL/1.0"
-
-#ifndef _MSC_VER
-#define PACK( __Declaration__ ) __Declaration__)
-#else
-#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
-#endif
 
 struct dfu_client_t;
 struct normal_client_t;
@@ -135,11 +127,7 @@ struct idevicerestore_client_t {
 	int root_ticket_len;
 	idevicerestore_progress_cb_t progress_cb;
 	void* progress_cb_data;
-#ifdef _MSC_VER
 	irecv_device_event_context_t irecv_e_ctx;
-#else
-    // Not used on mac
-#endif
 	void* idevice_e_ctx;
 	mutex_t device_event_mutex;
 	cond_t device_event_cond;
@@ -156,17 +144,11 @@ extern struct idevicerestore_mode_t idevicerestore_modes[];
 
 extern int idevicerestore_debug;
 
-#ifndef _MSC_VER
 __attribute__((format(printf, 1, 2)))
-#endif
 void info(const char* format, ...);
-#ifndef _MSC_VER
 __attribute__((format(printf, 1, 2)))
-#endif
 void error(const char* format, ...);
-#ifndef _MSC_VER
 __attribute__((format(printf, 1, 2)))
-#endif
 void debug(const char* format, ...);
 
 void debug_plist(plist_t plist);
@@ -176,14 +158,10 @@ int write_file(const char* filename, const void* data, size_t size);
 
 char *generate_guid(void);
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <windows.h>
-#ifndef _MSC_VER
 #include <unistd.h>
 #define __mkdir(path, mode) mkdir(path)
-#else
-#define __mkdir(path, mode) CreateDirectory(path, NULL)
-#endif
 #ifndef sleep
 #define sleep(x) Sleep(x*1000)
 #endif

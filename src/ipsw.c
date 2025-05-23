@@ -27,9 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include <errno.h>
 #include <limits.h>
 #include <sys/stat.h>
@@ -469,8 +467,7 @@ int ipsw_extract_to_file_with_progress(ipsw_archive_t ipsw, const char* infile, 
 			if (count < 0) {
 				int zep = 0;
 				int sep = 0;
-				//zip_file_error_get(zfile, &zep, &sep);
-				zip_file_get_error(zfile);
+				zip_file_error_get(zfile, &zep, &sep);
 				error("ERROR: zip_fread: %s %d %d\n", infile, zep, sep);
 				ret = -1;
 				break;
@@ -548,11 +545,7 @@ int ipsw_extract_to_file_with_progress(ipsw_archive_t ipsw, const char* infile, 
 					if (cancel_flag) {
 						break;
 					}
-#ifdef _MSC_VER
-					SSIZE_T r = fread(buffer, 1, BUFSIZE, fi);
-#else
 					ssize_t r = fread(buffer, 1, BUFSIZE, fi);
-#endif
 					if (r < 0) {
 						error("ERROR: fread failed: %s\n", strerror(errno));
 						ret = -1;
@@ -679,8 +672,7 @@ int ipsw_extract_to_memory(ipsw_archive_t ipsw, const char* infile, unsigned cha
 		if (zr < 0) {
 			int zep = 0;
 			int sep = 0;
-			//zip_file_error_get(zfile, &zep, &sep);
-			zip_file_get_error(zfile);
+			zip_file_error_get(zfile, &zep, &sep);
 			error("ERROR: zip_fread: %s %d %d\n", infile, zep, sep);
 			free(buffer);
 			return -1;
@@ -694,7 +686,7 @@ int ipsw_extract_to_memory(ipsw_archive_t ipsw, const char* infile, unsigned cha
 	} else {
 		char *filepath = build_path(ipsw->path, infile);
 		struct stat fst;
-#ifdef _WIN32
+#ifdef WIN32
 		if (stat(filepath, &fst) != 0) {
 #else
 		if (lstat(filepath, &fst) != 0) {
@@ -711,7 +703,7 @@ int ipsw_extract_to_memory(ipsw_archive_t ipsw, const char* infile, unsigned cha
 			return -1;
 		}
 
-#ifndef _WIN32
+#ifndef WIN32
 		if (S_ISLNK(fst.st_mode)) {
 			if (readlink(filepath, (char*)buffer, size) < 0) {
 				error("ERROR: %s: readlink failed for %s: %s\n", __func__, filepath, strerror(errno));
@@ -736,7 +728,7 @@ int ipsw_extract_to_memory(ipsw_archive_t ipsw, const char* infile, unsigned cha
 				return -1;
 			}
 			fclose(f);
-#ifndef _WIN32
+#ifndef WIN32
 		}
 #endif
 		buffer[size] = '\0';
@@ -827,7 +819,7 @@ int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ip
 	} else {
 		char *filepath = build_path(ipsw->path, infile);
 		struct stat fst;
-#ifdef _WIN32
+#ifdef WIN32
 		if (stat(filepath, &fst) != 0) {
 #else
 		if (lstat(filepath, &fst) != 0) {
@@ -844,7 +836,7 @@ int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ip
 			return -1;
 		}
 
-#ifndef _WIN32
+#ifndef WIN32
 		if (S_ISLNK(fst.st_mode)) {
 			ssize_t rl = readlink(filepath, (char*)buffer, (total_size > blocksize) ? blocksize : total_size);
 			if (rl < 0) {
@@ -879,7 +871,7 @@ int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ip
 				done += fr;
 			}
 			fclose(f);
-#ifndef _WIN32
+#ifndef WIN32
 		}
 #endif
 		free(filepath);
@@ -970,7 +962,7 @@ static int ipsw_list_contents_recurse(ipsw_archive_t ipsw, const char *path, ips
 			subpath = strdup(dir->d_name);
 
 		struct stat st;
-#ifdef _WIN32
+#ifdef WIN32
 		ret = stat(fpath, &st);
 #else
 		ret = lstat(fpath, &st);
@@ -1479,7 +1471,7 @@ int ipsw_file_seek(ipsw_file_handle_t handle, int64_t offset, int whence)
 	if (handle && handle->zfile) {
 		return zip_fseek(handle->zfile, offset, whence);
 	} else if (handle && handle->file) {
-#ifdef _WIN32
+#ifdef WIN32
 		if (whence == SEEK_SET) {
 			rewind(handle->file);
 		}
@@ -1498,7 +1490,7 @@ int64_t ipsw_file_tell(ipsw_file_handle_t handle)
 	if (handle && handle->zfile) {
 		return zip_ftell(handle->zfile);
 	} else if (handle && handle->file) {
-#ifdef _WIN32
+#ifdef WIN32
 		return _lseeki64(fileno(handle->file), 0, SEEK_CUR);
 #else
 		return ftello(handle->file);

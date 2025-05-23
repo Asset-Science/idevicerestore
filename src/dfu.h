@@ -39,11 +39,7 @@ struct dfu_client_t {
 
 int dfu_client_new(struct idevicerestore_client_t* client);
 void dfu_client_free(struct idevicerestore_client_t* client);
-#ifdef _MSC_VER
-__declspec(dllexport) irecv_device_t dfu_get_irecv_device(struct idevicerestore_client_t* client);
-#else
 irecv_device_t dfu_get_irecv_device(struct idevicerestore_client_t* client);
-#endif
 int dfu_send_buffer(struct idevicerestore_client_t* client, unsigned char* buffer, unsigned int size);
 int dfu_send_buffer_with_options(struct idevicerestore_client_t* client, unsigned char* buffer, unsigned int size, unsigned int irecv_options);
 int dfu_send_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component);
@@ -55,11 +51,6 @@ int dfu_get_portdfu_nonce(struct idevicerestore_client_t* client, unsigned char*
 int dfu_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size);
 int dfu_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size);
 int dfu_enter_recovery(struct idevicerestore_client_t* client, plist_t build_identity);
-#ifdef _MSC_VER
-__declspec(dllexport) int dfu_check_mode(struct idevicerestore_client_t* client);
-#else
-int dfu_check_mode(struct idevicerestore_client_t* client);
-#endif
 
 
 #ifdef __cplusplus

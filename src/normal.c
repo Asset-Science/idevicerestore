@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include <libirecovery.h>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -37,7 +35,7 @@
 #include "normal.h"
 #include "recovery.h"
 
-static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t* device, bool* stop)
+static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t* device)
 {
 	int num_devices = 0;
 	char **devices = NULL;
@@ -49,7 +47,7 @@ static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t*
 	*device = NULL;
 
 	if (client->udid) {
-		device_error = idevice_new(&dev, client->udid, stop);
+		device_error = idevice_new(&dev, client->udid);
 		if (device_error != IDEVICE_E_SUCCESS) {
 			debug("%s: can't open device with UDID %s\n", __func__, client->udid);
 			return -1;
@@ -80,7 +78,7 @@ static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t*
 		return 0;
 	}
 
-	idevice_get_device_list(&devices, &num_devices, stop);
+	idevice_get_device_list(&devices, &num_devices);
 	if (num_devices == 0) {
 		return -1;
 	}
@@ -94,7 +92,7 @@ static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t*
 			idevice_free(dev);
 			dev = NULL;
 		}
-		device_error = idevice_new(&dev, devices[j], stop);
+		device_error = idevice_new(&dev, devices[j]);
 		if (device_error != IDEVICE_E_SUCCESS) {
 			debug("%s: can't open device with UDID %s\n", __func__, devices[j]);
 			continue;
@@ -145,11 +143,11 @@ static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t*
 	return 0;
 }
 
-__declspec(dllexport) int normal_check_mode(struct idevicerestore_client_t* client, bool *stop)
+int normal_check_mode(struct idevicerestore_client_t* client)
 {
 	idevice_t device = NULL;
 
-	normal_idevice_new(client, &device, stop);
+	normal_idevice_new(client, &device);
 	if (!device) {
 		return -1;
 	}
@@ -158,14 +156,14 @@ __declspec(dllexport) int normal_check_mode(struct idevicerestore_client_t* clie
 	return 0;
 }
 
-__declspec(dllexport) irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, bool *stop)
+irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client)
 {
 	idevice_t device = NULL;
 	lockdownd_client_t lockdown = NULL;
 	lockdownd_error_t lockdown_error = LOCKDOWN_E_SUCCESS;
 	irecv_device_t irecv_device = NULL;
 
-	normal_idevice_new(client, &device, stop);
+	normal_idevice_new(client, &device);
 	if (!device) {
 		return NULL;
 	}
@@ -216,14 +214,14 @@ __declspec(dllexport) irecv_device_t normal_get_irecv_device(struct ideviceresto
 	return irecv_device;
 }
 
-int normal_enter_recovery(struct idevicerestore_client_t* client, bool *stop)
+int normal_enter_recovery(struct idevicerestore_client_t* client)
 {
 	idevice_t device = NULL;
 	lockdownd_client_t lockdown = NULL;
 	idevice_error_t device_error = IDEVICE_E_SUCCESS;
 	lockdownd_error_t lockdown_error = LOCKDOWN_E_SUCCESS;
 
-	device_error = idevice_new(&device, client->udid, stop);
+	device_error = idevice_new(&device, client->udid);
 	if (device_error != IDEVICE_E_SUCCESS) {
 		error("ERROR: Unable to find device\n");
 		return -1;
@@ -288,7 +286,7 @@ int normal_enter_recovery(struct idevicerestore_client_t* client, bool *stop)
 	return 0;
 }
 
-plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const char* domain, const char* key, bool *stop)
+plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const char* domain, const char* key)
 {
 	idevice_t device = NULL;
 	plist_t node = NULL;
@@ -296,7 +294,7 @@ plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const 
 	idevice_error_t device_error = IDEVICE_E_SUCCESS;
 	lockdownd_error_t lockdown_error = LOCKDOWN_E_SUCCESS;
 
-	device_error = idevice_new(&device, client->udid, stop);
+	device_error = idevice_new(&device, client->udid);
 	if (device_error != IDEVICE_E_SUCCESS) {
 		error("ERROR: Unable to connect to device?!\n");
 		return NULL;
@@ -325,9 +323,9 @@ plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const 
 	return node;
 }
 
-static int normal_get_nonce_by_key(struct idevicerestore_client_t* client, const char* key, unsigned char** nonce, unsigned int* nonce_size, bool *stop)
+static int normal_get_nonce_by_key(struct idevicerestore_client_t* client, const char* key, unsigned char** nonce, unsigned int* nonce_size)
 {
-	plist_t nonce_node = normal_get_lockdown_value(client, NULL, key, stop);
+	plist_t nonce_node = normal_get_lockdown_value(client, NULL, key);
 
 	if (!nonce_node || plist_get_node_type(nonce_node) != PLIST_DATA) {
 		error("Unable to get %s\n", key);
@@ -342,9 +340,9 @@ static int normal_get_nonce_by_key(struct idevicerestore_client_t* client, const
 	return 0;
 }
 
-int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size, bool *stop)
+int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size)
 {
-	plist_t node = normal_get_lockdown_value(client, NULL, "ApParameters", stop);
+	plist_t node = normal_get_lockdown_value(client, NULL, "ApParameters");
 	if (PLIST_IS_DICT(node)) {
 		plist_t nonce_node = plist_dict_get_item(node, "SepNonce");
 		if (nonce_node) {
@@ -356,17 +354,17 @@ int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char**
 		}
 	}
 	plist_free(node);
-	return normal_get_nonce_by_key(client, "SEPNonce", nonce, nonce_size, stop);
+	return normal_get_nonce_by_key(client, "SEPNonce", nonce, nonce_size);
 }
 
-int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size, bool* stop)
+int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size)
 {
-	return normal_get_nonce_by_key(client, "ApNonce", nonce, nonce_size, stop);
+	return normal_get_nonce_by_key(client, "ApNonce", nonce, nonce_size);
 }
 
-int normal_is_image4_supported(struct idevicerestore_client_t* client, bool* stop)
+int normal_is_image4_supported(struct idevicerestore_client_t* client)
 {
-	plist_t node = normal_get_lockdown_value(client, NULL, "Image4Supported", stop);
+	plist_t node = normal_get_lockdown_value(client, NULL, "Image4Supported");
 
 	if (!node || plist_get_node_type(node) != PLIST_BOOLEAN) {
 		return 0;
@@ -379,30 +377,17 @@ int normal_is_image4_supported(struct idevicerestore_client_t* client, bool* sto
 	return bval;
 }
 
-// int normal_get_ecid(struct idevicerestore_client_t* client, uint64_t* ecid, bool* stop)
-// {
-// 	plist_t unique_chip_node = normal_get_lockdown_value(client, NULL, "UniqueChipID", stop);
-// 	if (!unique_chip_node || plist_get_node_type(unique_chip_node) != PLIST_UINT) {
-// 		error("ERROR: Unable to get ECID\n");
-// 		return -1;
-// 	}
-// 	plist_get_uint_val(unique_chip_node, ecid);
-// 	plist_free(unique_chip_node);
-// 
-// 	return 0;
-// }
-
-int normal_get_firmware_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info, bool* stop)
+int normal_get_firmware_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info)
 {
 	uint8_t has_telephony_capability = 0;
 	plist_t node;
 
-	node = normal_get_lockdown_value(client, NULL, "TelephonyCapability", stop);
+	node = normal_get_lockdown_value(client, NULL, "TelephonyCapability");
 	plist_get_bool_val(node, &has_telephony_capability);
 	plist_free(node);
 
 	if (has_telephony_capability) {
-		node = normal_get_lockdown_value(client, NULL, "FirmwarePreflightInfo", stop);
+		node = normal_get_lockdown_value(client, NULL, "FirmwarePreflightInfo");
 		if (!node || plist_get_node_type(node) != PLIST_DICT) {
 			error("ERROR: Unable to get FirmwarePreflightInfo\n");
 			return -1;
@@ -416,9 +401,9 @@ int normal_get_firmware_preflight_info(struct idevicerestore_client_t* client, p
 	return 0;
 }
 
-int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info, bool* stop)
+int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info)
 {
-	plist_t node = normal_get_lockdown_value(client, NULL, "PreflightInfo", stop);
+	plist_t node = normal_get_lockdown_value(client, NULL, "PreflightInfo");
 	if (PLIST_IS_DICT(node)) {
 		*preflight_info = node;
 	} else {
@@ -428,7 +413,7 @@ int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *p
 	return 0;
 }
 
-int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_t manifest, bool* stop)
+int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_t manifest)
 {
 	int result = -1;
 
@@ -440,7 +425,7 @@ int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_
 	preboard_client_t preboard = NULL;
 	preboard_error_t perr;
 
-	device_err = idevice_new(&device, client->udid, stop);
+	device_err = idevice_new(&device, client->udid);
 	if (device_err != IDEVICE_E_SUCCESS) {
 		error("ERROR: Could not connect to device (%d)\n", device_err);
 		return -1;
@@ -552,7 +537,7 @@ int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_
 	return result;
 }
 
-int normal_handle_commit_stashbag(struct idevicerestore_client_t* client, plist_t manifest, bool* stop)
+int normal_handle_commit_stashbag(struct idevicerestore_client_t* client, plist_t manifest)
 {
 	int result = -1;
 
@@ -565,7 +550,7 @@ int normal_handle_commit_stashbag(struct idevicerestore_client_t* client, plist_
 	preboard_error_t perr;
 	plist_t pl = NULL;
 
-	device_err = idevice_new(&device, client->udid, stop);
+	device_err = idevice_new(&device, client->udid);
 	if (device_err != IDEVICE_E_SUCCESS) {
 		error("ERROR: Could not connect to device (%d)\n", device_err);
 		return -1;
