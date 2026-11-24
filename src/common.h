@@ -135,11 +135,7 @@ struct idevicerestore_client_t {
 	int root_ticket_len;
 	idevicerestore_progress_cb_t progress_cb;
 	void* progress_cb_data;
-#ifdef _MSC_VER
 	irecv_device_event_context_t irecv_e_ctx;
-#else
-    // Not used on mac
-#endif
 	void* idevice_e_ctx;
 	mutex_t device_event_mutex;
 	cond_t device_event_cond;
