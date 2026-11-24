@@ -145,7 +145,10 @@ static int normal_idevice_new(struct idevicerestore_client_t* client, idevice_t*
 	return 0;
 }
 
-__declspec(dllexport) int normal_check_mode(struct idevicerestore_client_t* client, bool *stop)
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+int normal_check_mode(struct idevicerestore_client_t* client, bool *stop)
 {
 	idevice_t device = NULL;
 
@@ -158,7 +161,10 @@ __declspec(dllexport) int normal_check_mode(struct idevicerestore_client_t* clie
 	return 0;
 }
 
-__declspec(dllexport) irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, bool *stop)
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, bool *stop)
 {
 	idevice_t device = NULL;
 	lockdownd_client_t lockdown = NULL;

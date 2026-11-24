@@ -75,7 +75,7 @@ extern const uint32_t lpol_file_length;
 
 typedef void (*idevicerestore_progress_cb_t)(int step, double step_progress, void* userdata);
 
-#ifdef OSX
+#ifndef _MSC_VER
 struct idevicerestore_client_t* idevicerestore_client_new(void);
 void idevicerestore_client_free(struct idevicerestore_client_t* client);
 #else
@@ -96,7 +96,7 @@ void idevicerestore_set_debug_stream(FILE* strm);
 int idevicerestore_start(struct idevicerestore_client_t* client);
 const char* idevicerestore_get_error(void);
 
-#ifdef OSX
+#ifndef _MSC_VER
 irecv_device_t get_irecv_device(struct idevicerestore_client_t* client, bool *stop);
 #else
 __declspec(dllexport) irecv_device_t get_irecv_device(struct idevicerestore_client_t* client, bool *stop);

@@ -247,7 +247,10 @@ int dfu_get_cpid(struct idevicerestore_client_t* client, unsigned int* cpid)
 	return 0;
 }
 
-__declspec(dllexport) int dfu_check_mode(struct idevicerestore_client_t* client) {
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+int dfu_check_mode(struct idevicerestore_client_t* client) {
 	int mode = 0;
 
 	if (dfu_client_new(client) < 0) {

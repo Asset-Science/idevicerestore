@@ -71,7 +71,7 @@ extern "C" {
 #define USER_AGENT_STRING "InetURL/1.0"
 
 #ifndef _MSC_VER
-#define PACK( __Declaration__ ) __Declaration__)
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #else
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #endif
