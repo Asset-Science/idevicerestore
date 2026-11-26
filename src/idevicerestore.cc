@@ -34,13 +34,19 @@
 #define F_OK 0
 #endif
 
+#ifdef _WIN32
 #include <io.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _MSC_VER
+/* Resolves only inside the jwservice tree (src/ascimobiledevice/idevicerestore/src); nothing in
+ * this file uses it, and the macOS build compiles this file from dep/idevicerestore/src. */
 #include "../../../jwcore/asci_exception.h"
+#endif
 
 #ifndef _MSC_VER
 #include <unistd.h>

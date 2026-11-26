@@ -275,7 +275,10 @@ static int restore_idevice_new(struct idevicerestore_client_t* client, idevice_t
 	return 0;
 }
 
-__declspec(dllexport) int restore_check_mode(struct idevicerestore_client_t* client, bool *stop)
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+int restore_check_mode(struct idevicerestore_client_t* client, bool *stop)
 {
 	idevice_t device = NULL;
 
@@ -288,7 +291,10 @@ __declspec(dllexport) int restore_check_mode(struct idevicerestore_client_t* cli
 	return 0;
 }
 
-__declspec(dllexport) irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client, bool* stop)
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+irecv_device_t restore_get_irecv_device(struct idevicerestore_client_t* client, bool* stop)
 {
 	char* model = NULL;
 	plist_t node = NULL;

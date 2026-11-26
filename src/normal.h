@@ -43,8 +43,8 @@ irecv_device_t normal_get_irecv_device(struct idevicerestore_client_t* client, b
 int normal_enter_recovery(struct idevicerestore_client_t* client, bool *stop);
 int normal_get_ecid(struct idevicerestore_client_t* client, uint64_t* ecid, bool* stop);
 int normal_is_image4_supported(struct idevicerestore_client_t* client, bool* stop);
-int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, int* nonce_size, bool* stop);
-int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, int* nonce_size, bool* stop);
+int normal_get_ap_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size, bool* stop);
+int normal_get_sep_nonce(struct idevicerestore_client_t* client, unsigned char** nonce, unsigned int* nonce_size, bool* stop);
 int normal_get_preflight_info(struct idevicerestore_client_t* client, plist_t *preflight_info, bool* stop);
 plist_t normal_get_lockdown_value(struct idevicerestore_client_t* client, const char* domain, const char* key, bool *stop);
 int normal_handle_create_stashbag(struct idevicerestore_client_t* client, plist_t manifest, bool* stop);
